@@ -145,19 +145,19 @@ This project will meet the core requirements by:
 ## 5. Timeline
 
 
-*   **Week 1 (Current Week - ending May 12th): Foundation & Core Backend**
-    *   Set up GitHub Repository & Initial Project Structure.
-    *   Implement User Model (including roles for 'superadmin', 'paid_user', 'standard_user') & Authentication API (registration, login, role-based access control).
-    *   Implement League & Team Data Models.
-    *   Develop Core League Management API (create league with role restrictions, join league, view league details).
+*   **Foundation & Core Backend**
+    *   Set up GitHub Repository & Initial Project Structure. [Done]
+    *   Implement User Model (including roles for 'superadmin', 'paid_user', 'standard_user') & Authentication API (registration, login, role-based access control). [Done]
+    *   Implement League & Team Data Models. [Done]
+    *   Develop Core League Management API (create league with role restrictions, join league, view league details). [TBD]
 
-*   **Week 2 (May 13th - May 19th): Draft Mechanics & Player Data**
-    *   Implement Draft Data Model.
-    *   Develop API endpoints for initiating and managing draft state (e.g., starting draft, moving to next player).
-    *   Integrate with an External NFL Player Data API (e.g., Sleeper API) to fetch and list players.
-    *   Implement Player Nomination Logic (API for users to nominate players).
-    *   Develop Initial Bidding Logic (API for placing bids, determining winning bid, assigning player to team, updating team budget).
-    *   Begin basic UI for player listing and initiating a draft.
+*   **Draft Mechanics & Player Data**
+    *   Implement Draft Data Model. [TBD]
+    *   Develop API endpoints for initiating and managing draft state (e.g., starting draft, moving to next player). [TBD]
+    *   Integrate with an External NFL Player Data API (e.g., Sleeper API) to fetch and list players. [TBD]
+    *   Implement Player Nomination Logic (API for users to nominate players). [TBD]
+    *   Develop Initial Bidding Logic (API for placing bids, determining winning bid, assigning player to team, updating team budget). [TBD]
+    *   Begin basic UI for player listing and initiating a draft. [TBD]
 
 *   **Week 3 (May 20th - May 26th): Real-time Features, UI Refinement & Testing**
     *   Integrate WebSockets for real-time bid updates, auction timer synchronization, and broadcasting draft events (new nomination, new bid, player sold).
