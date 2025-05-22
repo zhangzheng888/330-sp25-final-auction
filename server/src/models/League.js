@@ -19,11 +19,11 @@ const leagueSchema = new mongoose.Schema({
     },
     teamSize: {
         type: Number,
-        default: 10 // Example default
+        default: 10 // Value default, can be modified
     },
     playerBudget: {
         type: Number,
-        default: 200 // Example default
+        default: 200 // Value default, can be modified
     },
     rosterSettings: { // Example: { QB: 1, RB: 2, WR: 3, TE: 1, K: 1, DEF: 1, BENCH: 5 }
         type: Map,

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const userDAO = require('../daos/userDAO');
-const AppError = require('../utils/appError'); // We'll create this utility later
+const AppError = require('../utils/appError'); // TODO
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -82,7 +82,7 @@ exports.login = async (req, res, next) => {
 
         const token = generateToken(user._id);
 
-        // Remove password from output (though comparePassword handles it, good practice for general user object)
+        // Remove password from output
         user.password = undefined;
 
         res.status(200).json({

@@ -1,8 +1,8 @@
 const express = require('express');
 const morgan = require('morgan'); // HTTP request logger
 const AppError = require('./utils/appError');
-const globalErrorHandler = require('./middleware/errorMiddleware'); // We'll create this
-const mainRouter = require('./routes'); // Your main router from routes/index.js
+const globalErrorHandler = require('./middleware/errorMiddleware'); // TODO
+const mainRouter = require('./routes'); // Main router from routes/index.js
 
 const app = express();
 

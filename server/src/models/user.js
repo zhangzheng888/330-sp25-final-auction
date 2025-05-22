@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
         ref: 'League',
         default: null
     },
-    username: { // Optional: if you want a display name separate from email
+    username: { // Optional: maybe display name separate from email
         type: String,
         trim: true,
         unique: true,
@@ -62,7 +62,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 
 // Indexes
 userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ leagueId: 1 }); // If you often query users by league
+userSchema.index({ leagueId: 1 });
 userSchema.index({ username: 1 }, { unique: true, sparse: true });
 
 const User = mongoose.model('User', userSchema);
