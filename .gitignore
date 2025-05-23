@@ -1,5 +1,5 @@
 # Dependencies
-/node_modules
+node_modules/
 
 # Environment variables
 .env
@@ -55,6 +55,9 @@ web_modules/
 
 # PNPM files
 .pnpm-store
+
+# Cache directories within node_modules
+**/node_modules/.cache
 
 # Operating System Files
 .DS_Store
