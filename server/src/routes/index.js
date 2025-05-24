@@ -1,5 +1,5 @@
 const express = require('express');
-const authRoutes = require('./authRoutes');
+const authRoutes = require('./auth.routes.js');
 // const leagueRoutes = require('./leagueRoutes'); // Future league routes
 // const teamRoutes = require('./teamRoutes');     // Future team routes
 
