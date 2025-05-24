@@ -4,6 +4,8 @@
   "description": "Fantasy Football Live Auction Draft Platform",
   "private": true,
   "scripts": {
+    "prepare": "husky",
+    "test": "cd server && npm test",
     "server": "cd server && npm start",
     "server:dev": "cd server && npm run dev",
     "server:test": "cd server && npm test"
@@ -13,5 +15,10 @@
     "url": "YOUR_GIT_REPOSITORY_URL_HERE"
   },
   "author": "Your Name",
-  "license": "ISC"
-} 
+  "license": "ISC",
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "husky": "^9.1.7"
+  }
+}
