@@ -1,7 +1,7 @@
 const express = require('express');
 const morgan = require('morgan'); // HTTP request logger
-const AppError = require('./utils/appError');
-const globalErrorHandler = require('./middleware/errorMiddleware'); // TODO
+const AppError = require('./utils/app.error');
+const globalErrorHandler = require('./middleware/error.middleware'); // TODO
 const mainRouter = require('./routes'); // Main router from routes/index.js
 
 const app = express();
@@ -20,8 +20,8 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' })); // For URL-encod
 // API Routes
 app.use('/api/v1', mainRouter); // Prefix all routes with /api/v1
 
-// Handle undefined routes
-app.all('*', (req, res, next) => {
+// Handle undefined routes - This middleware will catch any requests that don't match previous routes
+app.use((req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
