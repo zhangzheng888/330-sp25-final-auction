@@ -1,0 +1,17 @@
+{
+  "name": "fantasy-football-auction",
+  "version": "0.1.0",
+  "description": "Fantasy Football Live Auction Draft Platform",
+  "private": true,
+  "scripts": {
+    "server": "cd server && npm start",
+    "server:dev": "cd server && npm run dev",
+    "server:test": "cd server && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "YOUR_GIT_REPOSITORY_URL_HERE"
+  },
+  "author": "Your Name",
+  "license": "ISC"
+} 
