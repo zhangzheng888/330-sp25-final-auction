@@ -1,27 +1,28 @@
 module.exports = {
-    // testEnvironment: '@shelf/jest-mongodb/environment',
-    preset: '@shelf/jest-mongodb', // preset includes the environment
-    setupFilesAfterEnv: ['./jest.setup.js'],
-    // globalSetup: '@shelf/jest-mongodb/setup', // Handled by preset or environment
-    // globalTeardown: '@shelf/jest-mongodb/teardown', // Handled by preset or environment
-    watchPathIgnorePatterns: ['globalConfig'], // often useful if jest-mongodb writes a config file
-    testTimeout: 30000, // Increase timeout for DB operations if needed
-    // If you're using the mongodbMemoryServerOptions directly in this file (as you had it):
-    // mongodbMemoryServerOptions: {
-    //     binary: {
-    //         version: '8.0.6', // Specify a version if needed, or let it use the default
-    //         skipMD5: true
-    //     },
-    //     autoStart: true, // Ensure it starts automatically
-    //     instance: {
-    //         dbName: 'jest' // Default DB name for tests
-    //     }
-    // },
-    // To avoid the Jest validation warning, you might need to put mongodbMemoryServerOptions
-    // in a separate jest-mongodb-config.js or ensure @shelf/jest-mongodb handles it internally
-    // when using testEnvironment. For now, keeping it here as per your previous setup.
+    preset: '@shelf/jest-mongodb',
+    testEnvironment: 'node',
+    clearMocks: true,
     collectCoverage: true,
-    coverageDirectory: "coverage",
-    coverageReporters: ["json", "lcov", "text", "clover"],
-    // Add any other Jest configurations you need, like moduleNameMapper, transform, etc.
+    coverageDirectory: 'coverage',
+    coverageProvider: 'v8', // or 'babel'
+    roots: ['<rootDir>/src', '<rootDir>/tests'],
+    setupFilesAfterEnv: ['./jest.setup.js'], // Correct path relative to jest.config.js location
+    testPathIgnorePatterns: [
+        '/node_modules/',
+        '/dist/'
+    ],
+    // Optional: If you face issues with mongodb-memory-server, you might need this
+    // globalSetup: '@shelf/jest-mongodb/setup.js',
+    // globalTeardown: '@shelf/jest-mongodb/teardown.js',
+    // testEnvironmentOptions: {
+    //     uri: process.env.MONGO_URI, // This uses the URI from jest-mongodb-config
+    // },
+    // mongodbMemoryServerOptions: { // As discussed, this was a point of iteration
+    //   binary: {
+    //     version: '6.0.4', // Specify your MongoDB version
+    //     skipMD5: true,
+    //   },
+    //   autoStart: false, // we manually start it in jest.setup.js
+    //   instance: {},
+    // },
 };

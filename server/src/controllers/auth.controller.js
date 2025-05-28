@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const userDAO = require('../daos/user.dao.js');
-const AppError = require('../utils/app.error.js'); // Corrected path
+const leagueDAO = require('../daos/league.dao.js');
+const AppError = require('../utils/app.error.js');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -17,25 +18,16 @@ exports.register = async (req, res, next) => {
         }
 
         let leagueId = null;
-        let role = 'user'; // Default role
+        let role = 'user';
 
-        // If a leagueCode is provided, try to find the league
         if (leagueCode) {
-            const league = await userDAO.findLeagueByCode(leagueCode);
+            const league = await leagueDAO.findLeagueByCode(leagueCode);
             if (!league) {
                 return next(new AppError('Invalid league code.', 400));
             }
             leagueId = league._id;
-            // For now, anyone registering with a league code is a 'user'.
-            // Commissioner assignment logic can be handled separately (e.g., by superadmin).
         } else {
-            // Scenario: User registering without a league code.
-            // This could be a superadmin, or a user who will join/create a league later.
-            // For now, not allow general registration without a league code unless defined.
-            // To allow superadmin creation, this route would need protection or a special flag.
             return next(new AppError('League code is required for registration.', 400));
-            // If I allow registration without a league code for a different role:
-            // role = 'some_other_role_if_no_league_code';
         }
 
         const newUser = await userDAO.createUser({
@@ -43,12 +35,10 @@ exports.register = async (req, res, next) => {
             password,
             role,
             leagueId,
-            username, // Optional username from request
+            username,
         });
 
         const token = generateToken(newUser._id);
-
-        // Remove password from output
         newUser.password = undefined;
 
         res.status(201).json({
@@ -59,10 +49,10 @@ exports.register = async (req, res, next) => {
             },
         });
     } catch (error) {
-        if (error.statusCode === 409) { // Email exists from DAO
+        if (error.statusCode === 409) {
              return next(new AppError(error.message, 409));
         }
-        next(error); // Forward to global error handler
+        next(error);
     }
 };
 
@@ -81,8 +71,6 @@ exports.login = async (req, res, next) => {
         }
 
         const token = generateToken(user._id);
-
-        // Remove password from output
         user.password = undefined;
 
         res.status(200).json({

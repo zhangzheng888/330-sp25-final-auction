@@ -1,14 +1,5 @@
 const User = require('../models/user.model.js');
-const League = require('../models/league.model.js');
-
-/**
- * Finds a league by its unique league code.
- * @param {string} leagueCode - The unique code of the league.
- * @returns {Promise<League|null>} The league document or null if not found.
- */
-async function findLeagueByCode(leagueCode) {
-    return League.findOne({ leagueCode });
-}
+// const League = require('../models/league.model.js'); // No longer needed here
 
 /**
  * Creates a new user in the database.
@@ -42,5 +33,5 @@ async function findUserByEmail(email) {
 module.exports = {
     createUser,
     findUserByEmail,
-    findLeagueByCode,
+    // findLeagueByCode, // Removed as it's now in league.dao.js
 };
