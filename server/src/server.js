@@ -20,11 +20,7 @@ if (!DB) {
 }
 
 mongoose.connect(DB, {
-    // These options are deprecated in Mongoose 6+, but keep them if you are on an older version
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
-    // useCreateIndex: true, // also deprecated
-    // useFindAndModify: false // also deprecated
+    // No options needed for Mongoose 6+ with modern MongoDB drivers
 }).then(() => console.log('DB connection successful!'))
   .catch(err => {
     console.error('DB connection error:', err);
