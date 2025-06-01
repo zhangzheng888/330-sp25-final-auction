@@ -14,6 +14,16 @@ async function createLeague(leagueData) {
 }
 
 /**
+ * Finds all leagues.
+ * @param {object} queryOptions - Options for filtering, sorting, pagination (to be implemented later).
+ * @returns {Promise<Array<League>>} A list of league documents.
+ */
+async function findAllLeagues(queryOptions = {}) {
+    // Basic implementation for now, can be extended with queryOptions
+    return League.find(queryOptions);
+}
+
+/**
  * Finds a league by its ID.
  * @param {string} leagueId - The ID of the league.
  * @returns {Promise<League|null>} The league document or null if not found.
@@ -26,28 +36,32 @@ async function findLeagueById(leagueId) {
 }
 
 /**
- * Deletes a league by its ID.
- * @param {string} leagueId - The ID of the league to delete.
- * @param {string} userId - The ID of the user attempting the deletion (for authorization).
- * @returns {Promise<League|null>} The deleted league document or null if not found or not authorized.
+ * Updates a league by its ID.
+ * @param {string} leagueId - The ID of the league to update.
+ * @param {object} updateData - An object containing the fields to update.
+ * @returns {Promise<League|null>} The updated league document or null if not found.
  */
-async function deleteLeagueById(leagueId, userId) {
+async function updateLeagueById(leagueId, updateData) {
     if (!mongoose.Types.ObjectId.isValid(leagueId)) {
         return null;
     }
-    const league = await League.findById(leagueId);
-    if (!league) {
-        return null; // League not found
-    }
+    return League.findByIdAndUpdate(leagueId, updateData, {
+        new: true, // Return the modified document rather than the original
+        runValidators: true // Ensure that updates adhere to schema validations
+    });
+}
 
-    // Authorization: Only the commissioner can delete the league.
-    // Superadmin role check could be added here or in the controller.
-    if (league.commissionerId.toString() !== userId.toString()) {
-        const error = new Error('User not authorized to delete this league.');
-        error.statusCode = 403; // Forbidden
-        throw error;
+/**
+ * Deletes a league by its ID.
+ * @param {string} leagueId - The ID of the league to delete.
+ * @returns {Promise<League|null>} The deleted league document or null if not found.
+ */
+async function deleteLeagueById(leagueId) {
+    if (!mongoose.Types.ObjectId.isValid(leagueId)) {
+        return null;
     }
-
+    // Authorization logic (e.g., checking commissionerId or superadmin role)
+    // should be handled in the controller or middleware layer before calling this DAO function.
     return League.findByIdAndDelete(leagueId);
 }
 
@@ -63,7 +77,9 @@ async function findLeagueByCode(leagueCode) {
 
 module.exports = {
     createLeague,
+    findAllLeagues,
     findLeagueById,
+    updateLeagueById,
     deleteLeagueById,
     findLeagueByCode,
 }; 
