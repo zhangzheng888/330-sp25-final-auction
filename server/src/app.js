@@ -3,6 +3,7 @@ const morgan = require('morgan'); // HTTP request logger
 const AppError = require('./utils/app.error');
 const globalErrorHandler = require('./middleware/error.middleware'); // TODO
 const mainRouter = require('./routes'); // Main router from routes/index.js
+const path = require('path');
 
 const app = express();
 
@@ -14,8 +15,8 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json()); // Body parser, reading data from body into req.body
 app.use(express.urlencoded({ extended: true, limit: '10kb' })); // For URL-encoded data
 
-// Serve static files (if any, e.g., for a simple frontend or uploaded files)
-// app.use(express.static(`${__dirname}/public`));
+// Serve static files from the client directory
+app.use(express.static(path.join(__dirname, '../../client')));
 
 // API Routes
 app.use('/api/v1', mainRouter); // Prefix all routes with /api/v1

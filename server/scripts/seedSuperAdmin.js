@@ -4,7 +4,7 @@ const User = require('../src/models/user.model.js'); // Adjust path if your mode
 
 // Load environment variables. Assuming .env is in the server/ directory for this script.
 // If you run this script from the root, you might need to adjust the path.
-dotenv.config({ path: './.env' }); // Or specify '../.env' if .env is in root and script is run from server/
+dotenv.config({ path: './.env' });
 
 const createSuperAdmin = async () => {
     const MONGODB_URI = process.env.MONGODB_URI;
