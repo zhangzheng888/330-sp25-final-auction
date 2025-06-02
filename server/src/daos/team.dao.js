@@ -12,13 +12,11 @@ async function findTeamById(teamId) {
 }
 
 async function findTeamByUserIdAndLeagueId(userId, leagueId) {
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(leagueId)) return null;
-    return Team.findOne({ userId, leagueId }).populate('roster.player');
+    return Team.findOne({ userId: userId, leagueId: leagueId });
 }
 
 async function findTeamsByLeagueId(leagueId) {
-    if (!mongoose.Types.ObjectId.isValid(leagueId)) return [];
-    return Team.find({ leagueId }).populate('userId', 'username email').populate('roster.player');
+    return Team.find({ leagueId: leagueId });
 }
 
 async function updateTeamRosterAndBudget(teamId, playerId, purchasePrice, newRemainingBudget) {

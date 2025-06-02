@@ -25,11 +25,14 @@ const draftSchema = new mongoose.Schema({
         default: 0, // Index in the draftOrder array
     },
     currentPlayerNomination: {
-        playerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', default: null },
-        nominatedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-        startingBid: { type: Number, default: 0 },
-        auctionStartTime: { type: Date, default: null }, // When the current player auction started
-        auctionEndTime: { type: Date, default: null },   // When the current player auction is set to end
+        playerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Player' },
+        nominatedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        nominatedByTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+        startingBid: { type: Number, min: 0, default: 1 },
+        currentBidAmount: { type: Number, min: 0 },
+        currentHighestBidderTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+        auctionStartTime: { type: Date },
+        auctionEndTime: { type: Date }
     },
     settings: {
         // Example: timePerPick: { type: Number, default: 60 }, // seconds
@@ -38,11 +41,13 @@ const draftSchema = new mongoose.Schema({
         // budget: { type: Number, required: true }, // This is likely tied to League settings
     },
     history: [{ // Optional: to log draft events like nominations, bids, player acquisitions
-        event_type: String, // e.g., 'nomination', 'bid', 'player_won'
+        event: String, // e.g., 'nomination', 'bid', 'player_won', 'unsold'
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
         playerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Player' },
         bidAmount: Number,
-        timestamp: { type: Date, default: Date.now }
+        timestamp: { type: Date, default: Date.now },
+        description: String
     }],
     createdAt: {
         type: Date,
