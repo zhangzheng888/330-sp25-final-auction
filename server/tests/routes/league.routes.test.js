@@ -1,48 +1,56 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const mongoose = require('mongoose');
-const User = require('../../src/models/user.model');
-const League = require('../../src/models/league.model');
+const User = require('../../src/models/user.model.js');
+const League = require('../../src/models/league.model.js');
 const jwt = require('jsonwebtoken');
-const { findOne, find } = require('../utils/db.testUtils.js');
+const { findOne, find, createTestUser, createTestLeague } = require('../utils/db.testUtils.js');
+
+// connectDB, clearDB, disconnectDB are globally available from jest.setup.js
 
 describe('League Routes - /api/v1/leagues', () => {
     let commissionerUser, otherUser, superAdminUser, userInLeague;
     let commissionerToken, otherUserToken, superAdminToken, userInLeagueToken;
     let testLeagueData, createdLeagueByCommissioner, anotherLeague;
 
-    const generateTestToken = (userId, email, role = 'user') => {
-        return jwt.sign({ id: userId, email, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    };
+    // Using createTestUser which returns a token, so direct token generation might not be needed here
+    // const generateTestToken = (userId, email, role = 'user') => {
+    //     return jwt.sign({ id: userId, email, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // };
 
     beforeAll(async () => {
-        // jest.setup.js handles DB connection and clearing
+        // REMOVED await connectDB(); - Handled by jest.setup.js
     });
 
     beforeEach(async () => {
-        superAdminUser = await User.create({
+        // REMOVED await clearDB(); - Handled by jest.setup.js
+
+        const superAdminData = await createTestUser({
             email: 'superadmin@example.com',
             password: 'password123',
             role: 'superadmin',
             username: 'super',
         });
-        superAdminToken = generateTestToken(superAdminUser._id, superAdminUser.email, superAdminUser.role);
+        superAdminUser = superAdminData.user;
+        superAdminToken = superAdminData.token;
 
-        commissionerUser = await User.create({
+        const commissionerData = await createTestUser({
             email: 'commissioner@example.com',
             password: 'password123',
             role: 'commissioner',
             username: 'commish',
         });
-        commissionerToken = generateTestToken(commissionerUser._id, commissionerUser.email, commissionerUser.role);
+        commissionerUser = commissionerData.user;
+        commissionerToken = commissionerData.token;
 
-        otherUser = await User.create({
+        const otherUserData = await createTestUser({
             email: 'otheruser@example.com',
             password: 'password123',
             role: 'user',
             username: 'otherdude',
         });
-        otherUserToken = generateTestToken(otherUser._id, otherUser.email, otherUser.role);
+        otherUser = otherUserData.user;
+        otherUserToken = otherUserData.token;
 
         testLeagueData = {
             leagueName: 'My Test League',
@@ -50,30 +58,36 @@ describe('League Routes - /api/v1/leagues', () => {
             playerBudget: 200,
         };
 
-        createdLeagueByCommissioner = await League.create({
-            ...testLeagueData,
-            commissionerId: commissionerUser._id,
-        });
+        // Pass commissionerUser (the user object) to createTestLeague
+        createdLeagueByCommissioner = await createTestLeague(commissionerUser, testLeagueData);
         
-        anotherLeague = await League.create({
+        // For anotherLeague, ensure a valid commissioner user object is passed
+        const anotherCommissionerData = await createTestUser({ email: 'anothercommish@example.com', password: 'password123', role: 'commissioner', username: 'anothercommish'});
+        anotherLeague = await createTestLeague(anotherCommissionerData.user, {
             leagueName: 'Another League',
             teamSize: 10,
             playerBudget: 100,
-            commissionerId: otherUser._id, // Temporarily, for variety, though otherUser is 'user' role
         });
 
-        userInLeague = await User.create({
+        const userInLeagueData = await createTestUser({
             email: 'userinleague@example.com',
             password: 'password123',
             role: 'user',
             username: 'member',
-            leagueId: createdLeagueByCommissioner._id
+            leagueId: createdLeagueByCommissioner._id // Assign after league is created
         });
-        userInLeagueToken = generateTestToken(userInLeague._id, userInLeague.email, userInLeague.role);
+        userInLeague = userInLeagueData.user;
+        userInLeagueToken = userInLeagueData.token;
 
         // Explicitly set commissionerUser's leagueId to the league they just commissioned for relevant tests
-        commissionerUser.leagueId = createdLeagueByCommissioner._id;
-        await commissionerUser.save();
+        // This should ideally be handled by a joinLeague or createLeague logic if commissioner auto-joins
+        await User.findByIdAndUpdate(commissionerUser._id, { leagueId: createdLeagueByCommissioner._id });
+        // Re-fetch to get the updated document if necessary for some tests, though usually not required for token generation.
+        // commissionerUser = await User.findById(commissionerUser._id);
+    });
+
+    afterAll(async () => {
+        // REMOVED await disconnectDB(); - Handled by jest.setup.js
     });
 
     describe('POST /api/v1/leagues (Create League)', () => {

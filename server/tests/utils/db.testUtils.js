@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const User = require('../../src/models/user.model.js');
+const League = require('../../src/models/league.model.js');
+const Player = require('../../src/models/player.model.js');
+const jwt = require('jsonwebtoken');
 
 /**
  * Finds a single document in the specified collection that matches the query.
@@ -45,7 +49,44 @@ async function find(model, query) {
     });
 }
 
+// Helper to create a user and generate a token for testing
+async function createTestUser(userData) {
+    const user = new User(userData);
+    await user.save();
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || '1h'
+    });
+    return { user, token };
+}
+
+// Helper to create a league for testing
+async function createTestLeague(commissionerUser, overrideData = {}) {
+    if (!commissionerUser || !commissionerUser._id) {
+        throw new Error('Valid commissionerUser with _id is required to create a test league.');
+    }
+    const leagueData = {
+        leagueName: overrideData.leagueName || 'Test League',
+        commissionerId: commissionerUser._id,
+        teamSize: overrideData.teamSize || 10,
+        playerBudget: overrideData.playerBudget || 200,
+        ...overrideData,
+    };
+    const league = new League(leagueData);
+    await league.save();
+    return league;
+}
+
+// Helper to create a player directly in the DB for testing purposes
+async function createTestPlayer(playerData) {
+    const player = new Player(playerData);
+    await player.save();
+    return player;
+}
+
 module.exports = {
     findOne,
     find,
+    createTestUser,
+    createTestLeague,
+    createTestPlayer,
 };

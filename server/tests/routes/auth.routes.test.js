@@ -1,47 +1,50 @@
 const request = require('supertest');
-const app = require('../../src/app.js'); // Path to your Express app
+const app = require('../../src/app');
 const mongoose = require('mongoose');
-// We'll need to import User and League models. Will use planned new names.
 const User = require('../../src/models/user.model.js'); 
 const League = require('../../src/models/league.model.js');
-const { findOne } = require('../utils/db.testUtils.js'); // DB test helpers
+// db.testUtils.js is used for creating test data, not for DB connection management here.
+const { createTestUser, createTestLeague, findOne } = require('../utils/db.testUtils'); 
 
-// JWT_SECRET needs to be loaded for token generation/verification if authController does that
-// jest.setup.js should handle dotenv.config()
+// connectDB, clearDB, disconnectDB are globally available from jest.setup.js
 
 describe('Auth Routes - /api/v1/auth', () => {
     let league;
     let existingUser;
 
     beforeAll(async () => {
-        // It's good practice to ensure models are registered if not already by imports
-        // This is especially true if jest.setup.js doesn't explicitly import them all.
-        // However, if User and League are imported above, they should be registered.
+        // REMOVED await connectDB(); - Handled by jest.setup.js
     });
 
     beforeEach(async () => {
-        // Clear collections is handled by jest.setup.js
+        // REMOVED await clearDB(); - Handled by jest.setup.js
 
         // Create a dummy league for registration tests
-        const LeagueModel = mongoose.model('League'); // Get model instance
-        league = await LeagueModel.create({
-            leagueName: 'Test League',
-            commissionerId: new mongoose.Types.ObjectId(), // Dummy ID
-            leagueCode: 'TEST123',
-            teamSize: 10,
-            playerBudget: 200,
-            // Add other required fields from your League model
+        // Use createTestLeague for consistency if it fits, or manual creation like this is fine.
+        const commissionerForTestLeague = await createTestUser({ 
+            email: 'authcommish@example.com', 
+            password: 'password123', 
+            username: 'authcommish', 
+            role: 'commissioner' 
+        });
+        league = await createTestLeague(commissionerForTestLeague.user, { 
+            leagueCode: 'TEST123', 
+            // ensure other required fields are present or handled by createTestLeague defaults
         });
 
         // Create an existing user for login tests and duplicate email tests
-        const UserModel = mongoose.model('User'); // Get model instance
-        existingUser = await UserModel.create({
+        const existingUserData = await createTestUser({
             email: 'existing@example.com',
             password: 'password123',
             role: 'user',
-            leagueId: league._id,
+            leagueId: league._id, // Assign to the created league
             username: 'existingUser'
         });
+        existingUser = existingUserData.user;
+    });
+
+    afterAll(async () => {
+        // REMOVED await disconnectDB(); - Handled by jest.setup.js
     });
 
     describe('POST /register', () => {

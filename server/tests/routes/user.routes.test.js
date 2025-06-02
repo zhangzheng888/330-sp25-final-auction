@@ -1,64 +1,79 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const mongoose = require('mongoose');
-const User = require('../../src/models/user.model');
-const League = require('../../src/models/league.model');
-const jwt = require('jsonwebtoken');
-const { findOne } = require('../utils/db.testUtils.js');
+const User = require('../../src/models/user.model.js');
+const League = require('../../src/models/league.model.js');
+// const jwt = require('jsonwebtoken'); // Not directly used for token generation here if createTestUser handles it
+const { createTestUser, createTestLeague } = require('../utils/db.testUtils'); 
+
+// connectDB, clearDB, disconnectDB are globally available from jest.setup.js
 
 describe('User Routes - /api/v1/users', () => {
     let superAdminUser, commissionerUser, regularUser1, regularUser2;
     let superAdminToken, commissionerToken, regularUser1Token;
     let testLeague;
 
-    const generateTestToken = (userId, email, role = 'user') => {
-        return jwt.sign({ id: userId, email, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    };
+    // Using createTestUser which returns a token, so direct token generation might not be needed here
+    // const generateTestToken = (userId, email, role = 'user') => {
+    //     return jwt.sign({ id: userId, email, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // };
 
     beforeAll(async () => {
-        // DB connection and clearing is handled by jest.setup.js
+        // REMOVED await connectDB(); - Handled by jest.setup.js
     });
 
     beforeEach(async () => {
-        superAdminUser = await User.create({
+        // REMOVED await clearDB(); - Handled by jest.setup.js
+
+        const superAdminData = await createTestUser({
             email: 'superadmin@example.com',
             password: 'password123',
             role: 'superadmin',
             username: 'super',
         });
-        superAdminToken = generateTestToken(superAdminUser._id, superAdminUser.email, superAdminUser.role);
+        superAdminUser = superAdminData.user;
+        superAdminToken = superAdminData.token;
 
-        testLeague = await League.create({
+        // Create a league first, as commissionerUser and regularUser1 will be part of it.
+        testLeague = await createTestLeague(superAdminUser, { // superAdminUser can be initial commish
             leagueName: 'Main Test League',
-            commissionerId: superAdminUser._id, // Superadmin can be a commissioner too
-            teamSize: 10,
-            playerBudget: 200
         });
 
-        commissionerUser = await User.create({
+        const commissionerData = await createTestUser({
             email: 'commissioner.user@example.com',
             password: 'password123',
             role: 'commissioner',
             username: 'testcommish',
-            leagueId: testLeague._id
+            leagueId: testLeague._id // Assign to the created league
         });
-        commissionerToken = generateTestToken(commissionerUser._id, commissionerUser.email, commissionerUser.role);
+        commissionerUser = commissionerData.user;
+        commissionerToken = commissionerData.token;
+        // Update league with actual commissioner if superAdmin was placeholder
+        await League.findByIdAndUpdate(testLeague._id, { commissionerId: commissionerUser._id });
 
-        regularUser1 = await User.create({
+
+        const regularUser1Data = await createTestUser({
             email: 'user1@example.com',
             password: 'password123',
             role: 'user',
             username: 'userone',
-            leagueId: testLeague._id
+            leagueId: testLeague._id // Assign to the created league
         });
-        regularUser1Token = generateTestToken(regularUser1._id, regularUser1.email, regularUser1.role);
+        regularUser1 = regularUser1Data.user;
+        regularUser1Token = regularUser1Data.token;
         
-        regularUser2 = await User.create({
+        const regularUser2Data = await createTestUser({
             email: 'user2@example.com',
             password: 'password123',
             role: 'user',
             username: 'usertwo',
         }); // User not in any league initially
+        regularUser2 = regularUser2Data.user; 
+        // token for regularUser2 if needed for some tests: regularUser2Token = regularUser2Data.token;
+    });
+
+    afterAll(async () => {
+        // REMOVED await disconnectDB(); - Handled by jest.setup.js
     });
 
     describe('GET /api/v1/users', () => {
@@ -150,9 +165,9 @@ describe('User Routes - /api/v1/users', () => {
         });
         
         it('should allow superadmin to change another superadmin role if more than one exists', async () => {
-            const anotherSuperAdmin = await User.create({ email: 'super2@ex.com', password: 'password123', role: 'superadmin', username: 'super2' });
+            const anotherSuperAdminData = await createTestUser({ email: 'super2@ex.com', password: 'password123', role: 'superadmin', username: 'super2' });
             const res = await request(app)
-                .patch(`/api/v1/users/${anotherSuperAdmin._id}/role`)
+                .patch(`/api/v1/users/${anotherSuperAdminData.user._id}/role`)
                 .set('Authorization', `Bearer ${superAdminToken}`)
                 .send({ role: 'commissioner' });
             expect(res.statusCode).toEqual(200);
@@ -196,9 +211,9 @@ describe('User Routes - /api/v1/users', () => {
         });
 
         it('should allow superadmin to delete another superadmin if more than one exists', async () => {
-            const anotherSuperAdmin = await User.create({ email: 'super2@ex.com', password: 'password123', role: 'superadmin', username: 'super2' });
+            const anotherSuperAdminData = await createTestUser({ email: 'super2@ex.com', password: 'password123', role: 'superadmin', username: 'super2' });
             const res = await request(app)
-                .delete(`/api/v1/users/${anotherSuperAdmin._id}`)
+                .delete(`/api/v1/users/${anotherSuperAdminData.user._id}`)
                 .set('Authorization', `Bearer ${superAdminToken}`);
             expect(res.statusCode).toEqual(204);
         });

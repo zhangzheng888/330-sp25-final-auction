@@ -62,10 +62,22 @@ async function updateUserById(userId, updateData) {
     });
 }
 
+async function deleteUserById(userId) {
+    return User.findByIdAndDelete(userId);
+}
+
+async function findUsersByLeagueId(leagueId) {
+    if (!mongoose.Types.ObjectId.isValid(leagueId)) return [];
+    // Find users whose leagueId field matches the provided leagueId
+    return User.find({ leagueId: leagueId }); 
+}
+
 module.exports = {
     createUser,
     findUserByEmail,
     findUserById,
     updateUserById,
+    deleteUserById,
+    findUsersByLeagueId,
     // findLeagueByCode, // Removed as it's now in league.dao.js
 };

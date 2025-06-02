@@ -85,29 +85,27 @@ module.exports = (err, req, res, next) => {
 
     if (process.env.NODE_ENV === 'development') {
         sendErrorDev(err, req, res);
-    } else if (process.env.NODE_ENV === 'production') {
-        let error = { ...err, name: err.name, message: err.message, stack: err.stack, code: err.code, keyValue: err.keyValue }; // Ensure all relevant properties are copied
+    } else if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test') {
+        let error = { ...err, name: err.name, message: err.message, stack: err.stack, code: err.code, keyValue: err.keyValue };
 
         if (error.name === 'CastError') error = handleCastErrorDB(error);
-        // Mongoose duplicate key errors have 'code: 11000'
         if (error.code === 11000) error = handleDuplicateFieldsDB(error);
         if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
         if (error.name === 'JsonWebTokenError') error = handleJWTError();
         if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
-        sendErrorProd(error, req, res);
-    } else if (process.env.NODE_ENV === 'test') {
-        // For test environment, send detailed error similar to development
-        // but without the console.error spam if not desired, or use sendErrorDev directly
-        // If you still want to log to console during tests, you can call sendErrorDev
-        // sendErrorDev(err, req, res); 
-        // Or, for cleaner test output, just send the JSON response:
-        return res.status(err.statusCode).json({
-            status: err.status,
-            message: err.message,
-            error: err, // Include full error object for debugging tests
-            stack: err.stack,
-        });
+        if (process.env.NODE_ENV === 'production') {
+            sendErrorProd(error, req, res);
+        } else {
+            // For test environment, send detailed error similar to development
+            // but use the transformed error object
+            return res.status(error.statusCode || 500).json({
+                status: error.status || 'error',
+                message: error.message,
+                error: error,
+                stack: error.stack,
+            });
+        }
     } else {
         // Fallback for environments where NODE_ENV is not explicitly set
         console.error('ERROR (Unknown Env - NODE_ENV not set to development, production, or test) ❓', err);
