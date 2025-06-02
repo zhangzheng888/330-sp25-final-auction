@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../../src/models/user.model.js');
 const League = require('../../src/models/league.model.js');
 const Player = require('../../src/models/player.model.js');
+const Team = require('../../src/models/team.model.js');
 const jwt = require('jsonwebtoken');
 
 /**
@@ -83,10 +84,25 @@ async function createTestPlayer(playerData) {
     return player;
 }
 
+// Helper to create a team directly in the DB for testing purposes
+async function createTestTeam(teamData) {
+    if (!teamData.userId || !teamData.leagueId) {
+        throw new Error('userId and leagueId are required to create a test team.');
+    }
+    const team = new Team({
+        teamName: 'Test Team', // Default name, can be overridden
+        remainingBudget: 200, // Default budget, can be overridden
+        ...teamData,
+    });
+    await team.save();
+    return team;
+}
+
 module.exports = {
     findOne,
     find,
     createTestUser,
     createTestLeague,
     createTestPlayer,
+    createTestTeam,
 };
