@@ -139,7 +139,10 @@
             }
             draftIdDisplay.textContent = draftId;
 
-            const socket = io(API_BASE_URL.replace('/api/v1', ''));
+            const socket = io('wss://330-sp25-final-auction-production.up.railway.app', {
+                query: { draftId },
+                reconnectionAttempts: 5, // Optional: Limit reconnection attempts
+            });
 
             function addLogMessage(message, type = 'status') {
                 const li = document.createElement('li');
