@@ -240,6 +240,29 @@ exports.nominatePlayer = catchAsync(async (req, res, next) => {
     
     const updatedDraft = await draftDAO.updateDraft(draft._id, draft);
 
+    // Emit WebSocket event for player nomination
+    const io = req.app.get('io');
+    if (io) {
+        const nominationData = {
+            draftId,
+            player: updatedDraft.currentPlayerNomination.playerId, // Send populated player object
+            nominatedByTeamId: updatedDraft.currentPlayerNomination.nominatedByTeamId,
+            startingBid: updatedDraft.currentPlayerNomination.startingBid,
+            auctionEndTime: updatedDraft.currentPlayerNomination.auctionEndTime,
+            historyEntry: updatedDraft.history[updatedDraft.history.length - 1]
+        };
+        io.to(draftId).emit('playerNominated', nominationData);
+        // Also emit a concise draft update for general status if needed by clients
+        io.to(draftId).emit('draftStatusUpdate', { 
+            currentBid: updatedDraft.currentPlayerNomination.currentBidAmount,
+            highestBidder: updatedDraft.currentPlayerNomination.currentHighestBidderTeamId,
+            playerOnBlock: updatedDraft.currentPlayerNomination.playerId,
+            auctionEndTime: updatedDraft.currentPlayerNomination.auctionEndTime
+        }); 
+    } else {
+        console.error("Socket.IO not available in req.app");
+    }
+
     res.status(200).json({
         status: 'success',
         message: 'Player nominated successfully',
@@ -324,6 +347,29 @@ exports.placeBid = catchAsync(async (req, res, next) => {
     });
 
     const updatedDraft = await draftDAO.updateDraft(draft._id, draft);
+
+    // Emit WebSocket event for new bid
+    const io = req.app.get('io');
+    if (io) {
+        const bidData = {
+            draftId,
+            player: updatedDraft.currentPlayerNomination.playerId, // Send populated player object
+            currentBidAmount: updatedDraft.currentPlayerNomination.currentBidAmount,
+            currentHighestBidderTeamId: updatedDraft.currentPlayerNomination.currentHighestBidderTeamId,
+            auctionEndTime: updatedDraft.currentPlayerNomination.auctionEndTime, // Send updated auction end time
+            historyEntry: updatedDraft.history[updatedDraft.history.length - 1]
+        };
+        io.to(draftId).emit('newBid', bidData);
+        // Also emit a concise draft update for general status
+        io.to(draftId).emit('draftStatusUpdate', { 
+            currentBid: updatedDraft.currentPlayerNomination.currentBidAmount,
+            highestBidder: updatedDraft.currentPlayerNomination.currentHighestBidderTeamId,
+            playerOnBlock: updatedDraft.currentPlayerNomination.playerId,
+            auctionEndTime: updatedDraft.currentPlayerNomination.auctionEndTime
+        });
+    } else {
+        console.error("Socket.IO not available in req.app");
+    }
 
     res.status(200).json({
         status: 'success',
@@ -425,6 +471,33 @@ exports.processAuctionOutcome = catchAsync(async (req, res, next) => {
     draft.currentTurnIndex = (draft.currentTurnIndex + 1) % draft.draftOrder.length;
 
     const updatedDraft = await draftDAO.updateDraft(draft._id, draft);
+    
+    // Emit WebSocket event for auction outcome
+    const io = req.app.get('io');
+    if (io) {
+        const outcomeData = {
+            draftId,
+            player: playerWon, // Send populated player object
+            winningTeamId,
+            winningBidAmount,
+            historyEntry: updatedDraft.history[updatedDraft.history.length -1],
+            nextTurnIndex: updatedDraft.currentTurnIndex,
+            nextTeamInfo: updatedDraft.draftOrder[updatedDraft.currentTurnIndex],
+            isSold: (winningTeamId && winningBidAmount > 0)
+        };
+        io.to(draftId).emit('auctionOutcome', outcomeData);
+        // Also emit a concise draft update for general status (player on block will be null)
+        io.to(draftId).emit('draftStatusUpdate', { 
+            currentBid: null,
+            highestBidder: null,
+            playerOnBlock: null,
+            auctionEndTime: null,
+            currentTurnIndex: updatedDraft.currentTurnIndex,
+            nextNominatorTeamId: updatedDraft.draftOrder[updatedDraft.currentTurnIndex].teamId
+        });
+    } else {
+        console.error("Socket.IO not available in req.app for processAuctionOutcome");
+    }
 
     res.status(200).json({
         status: 'success',
