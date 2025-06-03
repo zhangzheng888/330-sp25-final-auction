@@ -20,6 +20,27 @@ router.patch('/:draftId/start', draftController.startLeagueDraft);
 // Accessible to members of the league, commissioner, or superadmin
 router.get('/:draftId', draftController.getDraftDetails);
 
+// Nominate a player for auction
+router.post('/:draftId/nominate', 
+    authMiddleware.protect, 
+    // TODO: Add a more specific middleware if needed to check if user is part of the draft/league
+    draftController.nominatePlayer
+);
+
+// Place a bid on the currently nominated player
+router.post('/:draftId/bid',
+    authMiddleware.protect,
+    // TODO: Add a more specific middleware if needed
+    draftController.placeBid
+);
+
+// Process the outcome of the current player auction (e.g., after timer expires)
+router.post('/:draftId/process-auction',
+    authMiddleware.protect,
+    // authMiddleware.restrictTo('commissioner', 'superadmin'), // Or allow any league member to trigger if designed that way
+    draftController.processAuctionOutcome
+);
+
 // TODO: Routes for nomination, bidding (will likely involve WebSockets too)
 
 module.exports = router; 
