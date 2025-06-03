@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Draft View</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #playerOnBlockContainer {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #e9f5ff;
+        }
+        #playerOnBlockContainer.empty {
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+        #bidsLogContainer {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        #bidsLog {
+            list-style-type: none;
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        #bidsLog li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        #bidsLog li:last-child {
+            border-bottom: none;
+        }
+        .bid-event {
+            color: green;
+        }
+        .nomination-event {
+            color: blue;
+        }
+        .outcome-event {
+            color: purple;
+            font-weight: bold;
+        }
+        .status-event {
+            color: #555;
+            font-style: italic;
+        }
+        .error-message {
+            color: red;
+            font-weight: bold;
+        }
+        #auctionTimer {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Live Draft Feed</h1>
+        <p>Draft ID: <span id="draftIdDisplay"></span></p>
+        <p>Status: <span id="connectionStatus">Connecting...</span></p>
+
+        <div id="playerOnBlockContainer" class="empty">
+            <h2>Player on Block</h2>
+            <div id="playerInfo">
+                <p><strong>Name:</strong> <span id="playerName">--</span></p>
+                <p><strong>Position:</strong> <span id="playerPosition">--</span>, <strong>Team:</strong> <span id="playerNflTeam">--</span></p>
+                <p><strong>Nominated By Team ID:</strong> <span id="nominatedByTeamId">--</span></p>
+                <p><strong>Starting Bid:</strong> $<span id="startingBid">--</span></p>
+                <p><strong>Current Bid:</strong> $<span id="currentBid">--</span> by Team ID <span id="currentHighestBidderTeamId">--</span></p>
+                <p><strong>Auction Ends In:</strong> <span id="auctionTimer">--</span></p>
+            </div>
+             <div id="noPlayerMessage">
+                <p>No player currently on the block.</p>
+            </div>
+        </div>
+
+        <div id="bidsLogContainer">
+            <h2>Live Bids & Events</h2>
+            <ul id="bidsLog">
+                <!-- Bids will appear here -->
+            </ul>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const draftId = urlParams.get('draftId');
+
+            const draftIdDisplay = document.getElementById('draftIdDisplay');
+            const connectionStatusEl = document.getElementById('connectionStatus');
+            const bidsLogUl = document.getElementById('bidsLog');
+            
+            const playerInfoDiv = document.getElementById('playerInfo');
+            const noPlayerMessageDiv = document.getElementById('noPlayerMessage');
+            const playerOnBlockContainer = document.getElementById('playerOnBlockContainer');
+
+            const playerNameEl = document.getElementById('playerName');
+            const playerPositionEl = document.getElementById('playerPosition');
+            const playerNflTeamEl = document.getElementById('playerNflTeam');
+            const nominatedByTeamIdEl = document.getElementById('nominatedByTeamId');
+            const startingBidEl = document.getElementById('startingBid');
+            const currentBidEl = document.getElementById('currentBid');
+            const currentHighestBidderTeamIdEl = document.getElementById('currentHighestBidderTeamId');
+            const auctionTimerEl = document.getElementById('auctionTimer');
+            let auctionCountdownInterval = null;
+
+            if (!draftId) {
+                draftIdDisplay.textContent = 'N/A - Draft ID missing in URL';
+                connectionStatusEl.textContent = 'Error: No Draft ID.';
+                connectionStatusEl.style.color = 'red';
+                return;
+            }
+            draftIdDisplay.textContent = draftId;
+
+            const socket = io(API_BASE_URL.replace('/api/v1', ''));
+
+            function addLogMessage(message, type = 'status') {
+                const li = document.createElement('li');
+                li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                li.className = `${type}-event`;
+                bidsLogUl.prepend(li); // Add new messages to the top
+            }
+
+            function updatePlayerOnBlock(player, nominatedBy, startBid, currentBidVal, highestBidder) {
+                if (player && player.fullName) {
+                    playerNameEl.textContent = player.fullName;
+                    playerPositionEl.textContent = player.position || 'N/A';
+                    playerNflTeamEl.textContent = player.nflTeam || 'N/A';
+                    nominatedByTeamIdEl.textContent = nominatedBy || 'N/A';
+                    startingBidEl.textContent = startBid || 'N/A';
+                    currentBidEl.textContent = currentBidVal || startBid || 'N/A';
+                    currentHighestBidderTeamIdEl.textContent = highestBidder || nominatedBy || 'N/A';
+                    playerInfoDiv.style.display = 'block';
+                    noPlayerMessageDiv.style.display = 'none';
+                    playerOnBlockContainer.classList.remove('empty');
+                } else {
+                    playerNameEl.textContent = '--';
+                    playerPositionEl.textContent = '--';
+                    playerNflTeamEl.textContent = '--';
+                    nominatedByTeamIdEl.textContent = '--';
+                    startingBidEl.textContent = '--';
+                    currentBidEl.textContent = '--';
+                    currentHighestBidderTeamIdEl.textContent = '--';
+                    auctionTimerEl.textContent = '--';
+                    if(auctionCountdownInterval) clearInterval(auctionCountdownInterval);
+                    playerInfoDiv.style.display = 'none';
+                    noPlayerMessageDiv.style.display = 'block';
+                    playerOnBlockContainer.classList.add('empty');
+                }
+            }
+
+            function startAuctionTimer(endTimeStr) {
+                if (auctionCountdownInterval) clearInterval(auctionCountdownInterval);
+                if (!endTimeStr) {
+                    auctionTimerEl.textContent = '--';
+                    return;
+                }
+                const endTime = new Date(endTimeStr).getTime();
+
+                auctionCountdownInterval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const distance = endTime - now;
+                    const seconds = Math.max(0, Math.floor((distance % (1000 * 60)) / 1000));
+                    auctionTimerEl.textContent = `${seconds}s`;
+
+                    if (distance < 0) {
+                        clearInterval(auctionCountdownInterval);
+                        auctionTimerEl.textContent = "ENDED";
+                    }
+                }, 1000);
+            }
+
+            socket.on('connect', () => {
+                connectionStatusEl.textContent = 'Connected';
+                connectionStatusEl.style.color = 'green';
+                addLogMessage('Connected to draft server. Joining room...');
+                socket.emit('joinDraftRoom', draftId);
+            });
+
+            socket.on('disconnect', () => {
+                connectionStatusEl.textContent = 'Disconnected';
+                connectionStatusEl.style.color = 'red';
+                addLogMessage('Disconnected from draft server.', 'error');
+            });
+
+            socket.on('connect_error', (err) => {
+                connectionStatusEl.textContent = `Connection Error: ${err.message}`;
+                connectionStatusEl.style.color = 'red';
+                addLogMessage(`Connection Error: ${err.message}`, 'error');
+            });
+
+            socket.on('draftRoomJoined', (data) => {
+                addLogMessage(data.message, 'success');
+                // You might want to fetch initial full draft state here via an API call if needed
+                // For now, we just wait for live events.
+                updatePlayerOnBlock(null); // Clear player on block initially
+            });
+
+            socket.on('errorJoiningRoom', (errorMessage) => {
+                addLogMessage(`Error joining room: ${errorMessage}`, 'error');
+                connectionStatusEl.textContent = `Error: ${errorMessage}`;
+                connectionStatusEl.style.color = 'red';
+            });
+
+            socket.on('playerNominated', (data) => {
+                const player = data.player;
+                const desc = data.historyEntry ? data.historyEntry.description : 
+                    `Player ${player.fullName} nominated by team ${data.nominatedByTeamId} for $${data.startingBid}`;
+                addLogMessage(desc, 'nomination');
+                updatePlayerOnBlock(player, data.nominatedByTeamId, data.startingBid, data.startingBid, data.nominatedByTeamId);
+                startAuctionTimer(data.auctionEndTime);
+            });
+
+            socket.on('newBid', (data) => {
+                const player = data.player;
+                const desc = data.historyEntry ? data.historyEntry.description : 
+                    `Bid of $${data.currentBidAmount} for ${player.fullName} by team ${data.currentHighestBidderTeamId}`;
+                addLogMessage(desc, 'bid');
+                updatePlayerOnBlock(player, null, null, data.currentBidAmount, data.currentHighestBidderTeamId);
+                startAuctionTimer(data.auctionEndTime); // Reset timer with potentially extended time
+            });
+            
+            socket.on('draftStatusUpdate', (data) => {
+                // This provides a general update, useful if a client joins mid-auction or for reconciliation
+                console.log('Received draftStatusUpdate:', data);
+                if (data.playerOnBlock) {
+                    updatePlayerOnBlock(
+                        data.playerOnBlock, 
+                        data.nominatedByTeamId, // This might not be in draftStatusUpdate, need to adjust if so
+                        data.startingBid, // This might not be in draftStatusUpdate
+                        data.currentBid, 
+                        data.highestBidder
+                    );
+                    startAuctionTimer(data.auctionEndTime);
+                } else {
+                    updatePlayerOnBlock(null); // No player on block
+                     addLogMessage(`Next nominator: Team ${data.nextNominatorTeamId || 'N/A'} (Turn: ${data.currentTurnIndex + 1})`);
+                }
+            });
+
+            socket.on('auctionOutcome', (data) => {
+                const player = data.player;
+                let desc = data.historyEntry ? data.historyEntry.description : 
+                    (data.isSold ? 
+                        `${player.fullName} SOLD to team ${data.winningTeamId} for $${data.winningBidAmount}.` : 
+                        `${player.fullName} went UNSOLD.`);
+                addLogMessage(desc, 'outcome');
+                updatePlayerOnBlock(null); // Clear player from block
+                addLogMessage(`Next nominator: Team ${data.nextTeamInfo ? data.nextTeamInfo.teamId : 'N/A'} (Turn: ${data.nextTurnIndex +1})`);
+            });
+
+        });
+    </script>
+</body>
+</html> 
