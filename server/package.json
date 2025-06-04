@@ -25,6 +25,7 @@
     "lodash": "^4.17.21",
     "mongoose": "^8.15.0",
     "morgan": "^1.10.0",
+    "node-fetch": "^2.6.7",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

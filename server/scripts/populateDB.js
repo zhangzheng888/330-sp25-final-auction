@@ -1,9 +1,9 @@
-import _ from 'lodash';
-import { MongoClient } from 'mongodb';
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
+const _ = require('lodash');
+const { MongoClient } = require('mongodb');
+const fetch = require('node-fetch'); // Ensure node-fetch v2.x is installed for CommonJS
+const dotenv = require('dotenv');
 
-dotenv.config(); // Load environment variables from .env file
+dotenv.config({ path: '../.env' }); // Load environment variables from .env file in project root
 
 // const MONGO_URI = "mongodb://localhost:27017/espn"; // Your old local URI
 // const MONGO_URI = "mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER_NAME>.<YOUR_CLUSTER_ID>.mongodb.net/espn?retryWrites=true&w=majority"; // <-- REPLACE THIS WITH YOUR ATLAS CONNECTION STRING
