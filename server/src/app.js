@@ -4,8 +4,12 @@ const AppError = require('./utils/app.error');
 const globalErrorHandler = require('./middleware/error.middleware'); // TODO
 const mainRouter = require('./routes'); // Main router from routes/index.js
 const path = require('path');
+const cors = require('cors'); // Add this line
 
 const app = express();
+
+// Enable CORS for all routes
+app.use(cors()); // Add this line
 
 // 1) MIDDLEWARES
 if (process.env.NODE_ENV === 'development') {
